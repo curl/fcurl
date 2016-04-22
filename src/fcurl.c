@@ -133,6 +133,7 @@ struct fcurl_handle *fcurl_open(const char *url, const char *operation)
 {
   struct fcurl_handle *h;
   int still_running;
+  CURLMcode mc;
   (void)operation; /* assume reading for now */
 
   h = malloc(sizeof(struct fcurl_handle));
@@ -142,15 +143,33 @@ struct fcurl_handle *fcurl_open(const char *url, const char *operation)
   memset(h, 0, sizeof(struct fcurl_handle));
 
   h->curl = curl_easy_init();
+  if(!h->curl)
+    goto fail;
 
   curl_easy_setopt(h->curl, CURLOPT_URL, url);
-  curl_easy_setopt(h->curl, CURLOPT_VERBOSE, 0L);
+  curl_easy_setopt(h->curl, CURLOPT_VERBOSE, 1L);
   curl_easy_setopt(h->curl, CURLOPT_WRITEDATA, h);
   curl_easy_setopt(h->curl, CURLOPT_WRITEFUNCTION, write_callback);
 
   h->mh = curl_multi_init();
+  if(!h->mh)
+    goto fail;
+
+  mc = curl_multi_add_handle(h->mh, h->curl);
+  if(mc)
+    goto fail;
 
   return h;
+
+  fail:
+  if(h->mh)
+    curl_multi_cleanup(h->mh);
+  if(h->curl)
+    curl_easy_cleanup(h->curl);
+  if(h)
+    free(h);
+
+  return NULL;
 }
 
 int fcurl_close(struct fcurl_handle *h)
