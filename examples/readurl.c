@@ -25,11 +25,16 @@ int main(int argc, char **argv)
   file = fcurl_open("https://daniel.haxx.se/", "r");
   if(file) {
     char buffer [256];
+    int i=0;
     while(1) {
       size_t rc = fcurl_read(buffer, sizeof(buffer), 1, file);
-      if(rc > 0)
+      if(rc > 0) {
         /* send the received data to stdout */
+        printf("[%d] Got %zu bytes:\n", i++, rc);
         fwrite(buffer, rc, 1, stdout);
+      }
+      else
+        break;
     }
     fcurl_close(file);
   }
