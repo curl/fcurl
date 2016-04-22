@@ -18,6 +18,8 @@
  *
  ***************************************************************************/
 
+#include <stdbool.h>
+
 struct buffer {
   char *p;     /* the allocated memory */
   size_t size; /* size of the allocation */
@@ -29,6 +31,8 @@ struct buffer {
 struct fcurl_handle {
   CURL *curl;
   CURLM *mh;
+  bool transfer_complete;
+  CURLcode transfer_rc; /* assigned after completed transfer */
   struct buffer b;    /* allocated and handled internally */
   struct buffer user; /* as provided by the application */
 };
