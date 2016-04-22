@@ -22,3 +22,9 @@ Maybe something like this?
     int fcurl_flush(FCURL *stream);
 
     int fcurl_close(FCURL *stream);
+
+    int fcurl_getc(FCURL *stream);
+
+    char *fcurl_gets(char *s, int size, FCURL *stream);
+
+    int fcurl_ungetc(int c, FCURL *stream);
