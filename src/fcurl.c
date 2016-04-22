@@ -37,7 +37,7 @@ static size_t write_callback(char *buffer, size_t size, size_t nitems,
 
   size *= nitems;
 
-  osize = size;
+  osize = size; /* keep the original input size for returning */
 
   n_remaining = h->b.size - h->b.used; /* remaining space in private buffer */
   n_remainuser = h->user.size - h->user.used; /* remaining space in user buffer */
@@ -82,7 +82,7 @@ static size_t write_callback(char *buffer, size_t size, size_t nitems,
   memcpy(&h->b.p[h->b.used], buffer, size);
   h->b.used += size;
 
-  return size;
+  return osize;
 }
 
 /*
