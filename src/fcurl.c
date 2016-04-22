@@ -115,20 +115,23 @@ static int transfer(struct fcurl_handle *h, const void *target, size_t max)
     return 1; /* no buffer data left and transfer complete == done */
 
   if(!h->transfer_complete) {
-    mc = curl_multi_wait(h->mh, NULL, 0, 5000, &numfds);
-    if(mc == CURLM_OK) {
-      int left;
-      struct CURLMsg *m;
-      mc = curl_multi_perform(h->mh, &left);
-      if(mc != CURLM_OK)
-        return 1;
+    do {
+      mc = curl_multi_wait(h->mh, NULL, 0, 5000, &numfds);
+      if(mc == CURLM_OK) {
+        int left;
+        struct CURLMsg *m;
+        mc = curl_multi_perform(h->mh, &left);
+        if(mc != CURLM_OK)
+          return 1;
 
-      m = curl_multi_info_read(h->mh, &left);
-      if(m && (m->msg == CURLMSG_DONE)) {
-        h->transfer_complete = true;
-        h->transfer_rc = m->data.result;
+        m = curl_multi_info_read(h->mh, &left);
+        if(m && (m->msg == CURLMSG_DONE)) {
+          h->transfer_complete = true;
+          h->transfer_rc = m->data.result;
+          break;
+        }
       }
-    }
+    } while(!h->user.used);
   }
 
   return 0; /* all is well */
