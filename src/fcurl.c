@@ -20,6 +20,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <stdbool.h>
 #include <curl/curl.h>
 
 #include "handle.h"
@@ -110,14 +111,24 @@ static int transfer(struct fcurl_handle *h, const void *target, size_t max)
     if(h->user.used == max)
       return 0;
   }
+  else if(h->transfer_complete)
+    return 1; /* no buffer data left and transfer complete == done */
 
+  if(!h->transfer_complete) {
+    mc = curl_multi_wait(h->mh, NULL, 0, 5000, &numfds);
+    if(mc == CURLM_OK) {
+      int left;
+      struct CURLMsg *m;
+      mc = curl_multi_perform(h->mh, &left);
+      if(mc != CURLM_OK)
+        return 1;
 
-  mc = curl_multi_wait(h->mh, NULL, 0, 5000, &numfds);
-  if(mc == CURLM_OK) {
-    int still_running;
-    mc = curl_multi_perform(h->mh, &still_running);
-    if(mc != CURLM_OK)
-      return 1;
+      m = curl_multi_info_read(h->mh, &left);
+      if(m && (m->msg == CURLMSG_DONE)) {
+        h->transfer_complete = true;
+        h->transfer_rc = m->data.result;
+      }
+    }
   }
 
   return 0; /* all is well */
@@ -216,6 +227,8 @@ size_t fcurl_read(void *ptr, size_t size, size_t nmemb,
 
   if(rc)
     return 0;
+
+  return h->user.used;
 }
 
 char *fcurl_fgets(char *ptr, size_t size, struct fcurl_handle *file)
