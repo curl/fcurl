@@ -28,3 +28,13 @@ Maybe something like this?
     char *fcurl_gets(char *s, int size, FCURL *stream);
 
     int fcurl_ungetc(int c, FCURL *stream);
+
+    int fcurl_seek(FILE *stream, long offset, int whence);
+
+    long fcurl_tell(FILE *stream);
+
+    void fcurl_rewind(FILE *stream);
+
+    int fcurl_getpos(FILE *stream, fpos_t *pos);
+
+    int fcurl_setpos(FILE *stream, const fpos_t *pos);
