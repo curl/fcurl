@@ -29,12 +29,12 @@ Maybe something like this?
 
     int fcurl_ungetc(int c, FCURL *stream);
 
-    int fcurl_seek(FILE *stream, long offset, int whence);
+    int fcurl_seek(FCURL *stream, long offset, int whence);
 
-    long fcurl_tell(FILE *stream);
+    long fcurl_tell(FCURL *stream);
 
-    void fcurl_rewind(FILE *stream);
+    void fcurl_rewind(FCURL *stream);
 
-    int fcurl_getpos(FILE *stream, fpos_t *pos);
+    int fcurl_getpos(FCURL *stream, fpos_t *pos);
 
-    int fcurl_setpos(FILE *stream, const fpos_t *pos);
+    int fcurl_setpos(FCURL *stream, const fpos_t *pos);
