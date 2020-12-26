@@ -47,7 +47,7 @@ static size_t write_callback(char *buffer, size_t size, size_t nitems,
     size_t n_copytouser = MIN(size, n_remainuser);
 
     /* space left in the user buffer, copy as much as possible to there */
-    memcpy(h->user.p, buffer, n_copytouser);
+    memcpy(h->user.p + h->user.used, buffer, n_copytouser);
 
     buffer += n_copytouser;
     size -= n_copytouser;
@@ -196,6 +196,8 @@ int fcurl_close(struct fcurl_handle *h)
   /* cleanup */
   curl_easy_cleanup(h->curl);
 
+  curl_multi_cleanup(h->mh);
+
   free(h->b.p);
   free(h);
 
@@ -204,11 +206,8 @@ int fcurl_close(struct fcurl_handle *h)
 
 int fcurl_eof(struct fcurl_handle *h)
 {
-  int ret=0;
-
-  /* add code here */
-
-  return ret;
+  /* Still does not make difference between EOF and errors */
+  return (h->transfer_complete && 0 == h->b.used);
 }
 
 /*
