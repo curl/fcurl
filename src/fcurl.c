@@ -40,14 +40,15 @@ static size_t write_callback(char *buffer, size_t size, size_t nitems,
 
   osize = size; /* keep the original input size for returning */
 
-  n_remaining = h->b.size - h->b.used; /* remaining space in private buffer */
   n_remainuser = h->user.size - h->user.used; /* remaining space in user buffer */
+  buffer += h->used;
+  size   -= h->used;
 
   if(n_remainuser) {
     size_t n_copytouser = MIN(size, n_remainuser);
 
     /* space left in the user buffer, copy as much as possible to there */
-    memcpy(h->user.p, buffer, n_copytouser);
+    memcpy(h->user.p + h->user.used, buffer, n_copytouser);
 
     buffer += n_copytouser;
     size -= n_copytouser;
@@ -55,35 +56,16 @@ static size_t write_callback(char *buffer, size_t size, size_t nitems,
     h->user.used += n_copytouser;
   }
 
-  if(!size)
+  if(!size) {
     /* all data is taken care of */
+    h->used = 0;
     return osize;
-
-  if(size > n_remaining) {
-    char *newp;
-    size_t n_missing = (size - n_remaining);
-
-    /* we will have reaons to go back and reconsider buffer growth algorithms
-       later */
-    size_t newsize = h->b.size + n_missing + BUFFERGROWTHMARGIN;
-
-    newp = realloc(h->b.p, newsize);
-    if(!newp) {
-      /* use fprintf() during intial debugging */
-      fprintf(stderr, "out of memory!\n");
-      return 0; /* makes the transfer fail */
-    }
-    else {
-      h->b.size = newsize;
-      h->b.p = newp;
-    }
   }
 
-  /* copy data from libcurl into our handle specific buffer */
-  memcpy(&h->b.p[h->b.used], buffer, size);
-  h->b.used += size;
-
-  return osize;
+  /* Excess data, pause the transfer, storing how much is already used */
+  h->used   = osize - size;
+  h->paused = true;
+  return CURL_WRITEFUNC_PAUSE;
 }
 
 /*
@@ -98,25 +80,20 @@ static int transfer(struct fcurl_handle *h, const void *target, size_t max)
   h->user.used = 0;
   h->user.size = max;
 
-  if(h->b.used) {
-    /* there is data left from the previous invoke */
-    size_t n_copytouser = MIN(h->b.used, max);
-    memcpy((char *)target, h->b.p, n_copytouser);
-    h->user.used += n_copytouser;
-
-    /* slide the remaining buffer to the beginning */
-    memmove(h->b.p, h->b.p+n_copytouser, h->b.used - n_copytouser);
-    h->b.used -= n_copytouser;
-
-    if(h->user.used == max)
-      return 0;
-  }
-  else if(h->transfer_complete)
+  if(h->transfer_complete)
     return 1; /* no buffer data left and transfer complete == done */
 
   if(!h->transfer_complete) {
     do {
-      mc = curl_multi_wait(h->mh, NULL, 0, 5000, &numfds);
+      if (h->paused) {
+        /* Unpause + no 'wait' because it was paused with excess data */
+        h->paused = false;
+        curl_easy_pause(h->curl, CURLPAUSE_CONT);
+        mc = CURLM_OK;
+      }
+      else {
+	mc = curl_multi_wait(h->mh, NULL, 0, 5000, &numfds);
+      }
       if(mc == CURLM_OK) {
         int left;
         struct CURLMsg *m;
@@ -196,7 +173,8 @@ int fcurl_close(struct fcurl_handle *h)
   /* cleanup */
   curl_easy_cleanup(h->curl);
 
-  free(h->b.p);
+  curl_multi_cleanup(h->mh);
+
   free(h);
 
   return ret;
@@ -204,11 +182,8 @@ int fcurl_close(struct fcurl_handle *h)
 
 int fcurl_eof(struct fcurl_handle *h)
 {
-  int ret=0;
-
-  /* add code here */
-
-  return ret;
+  /* Still does not make difference between EOF and errors */
+  return h->transfer_complete;
 }
 
 /*

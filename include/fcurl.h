@@ -29,6 +29,7 @@ size_t fcurl_read(void *ptr, size_t size, size_t nmemb, FCURL *stream);
 size_t fcurl_write(const void *ptr, size_t size, size_t nmemb,
                    FCURL *stream);
 int fcurl_flush(FCURL *stream);
+int fcurl_eof(FCURL *stream);
 int fcurl_close(FCURL *stream);
 int fcurl_getc(FCURL *stream);
 char *fcurl_gets(char *s, int size, FCURL *stream);

@@ -31,9 +31,10 @@ struct buffer {
 struct fcurl_handle {
   CURL *curl;
   CURLM *mh;
+  bool paused;
+  size_t used;	/* used in callback buffer before pausing */
   bool transfer_complete;
   CURLcode transfer_rc; /* assigned after completed transfer */
-  struct buffer b;    /* allocated and handled internally */
   struct buffer user; /* as provided by the application */
 };
 
