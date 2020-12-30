@@ -86,10 +86,10 @@ static int transfer(struct fcurl_handle *h, const void *target, size_t max)
   if(!h->transfer_complete) {
     do {
       if (h->paused) {
-	/* Unpause + no 'wait' because it was paused with excess data */
-	h->paused = false;
-	curl_easy_pause(h->curl, CURLPAUSE_CONT);
-	mc = CURLM_OK;
+        /* Unpause + no 'wait' because it was paused with excess data */
+        h->paused = false;
+        curl_easy_pause(h->curl, CURLPAUSE_CONT);
+        mc = CURLM_OK;
       }
       else {
 	mc = curl_multi_wait(h->mh, NULL, 0, 5000, &numfds);
