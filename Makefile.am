@@ -1,4 +1,5 @@
 AUTOMAKE_OPTIONS = foreign nostdinc subdir-objects
+SUBDIRS = examples
 
 ACLOCAL_AMFLAGS = -I m4
 
