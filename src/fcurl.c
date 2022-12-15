@@ -234,7 +234,7 @@ size_t fcurl_read(void *ptr, size_t size, size_t nmemb,
   return h->user.used;
 }
 
-char *fcurl_fgets(char *ptr, size_t size, struct fcurl_handle *file)
+char *fcurl_gets(char *ptr, size_t size, struct fcurl_handle *file)
 {
   size_t want = size - 1;/* always need to leave room for zero termination */
 
